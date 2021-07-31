@@ -112,6 +112,13 @@ is_mac() {
   [ $# -eq 0 ] || [ "$(osx_version)" "$@" ]
 }
 
+is_arm64_apple() {
+  if [ "$(uname -s)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ]; then
+    return 0
+  fi
+  return 1
+}
+
 #  9.1  -> 901
 # 10.9  -> 1009
 # 10.10 -> 1010
@@ -769,6 +776,14 @@ build_package_standard_build() {
       use_homebrew_readline || use_freebsd_pkg || true
     if is_mac -ge 1014; then
       use_xcode_sdk_zlib || use_homebrew_zlib || true
+      if is_arm64_apple; then
+        local brew_home=$(brew --prefix)
+        CONFIGURE_OPTS="--enable-loadable-sqlite-extensions \
+          --with-openssl=${brew_home}/opt/openssl@1.1 \
+          --enable-optimizations --with-lto --with-system-expat \
+          --with-system-ffi --with-system-libmpdec --with-dtrace \
+          --enable-framework=${brew_home}/Frameworks"
+      fi
     fi
   fi
 
